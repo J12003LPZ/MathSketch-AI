@@ -1,0 +1,830 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>MathSketch AI</title>
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    />
+
+    <link
+      rel="icon"
+      href="../static/favicon/favicon.svg"
+      type="image/svg+xml"
+    />
+
+    <style>
+      /* Reset and basic styles */
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background-color: #000000;
+        font-family: Arial, sans-serif;
+      }
+
+      #drawingCanvas {
+        background-color: #000000;
+        display: block;
+        height: calc(100% - 56px);
+        width: 100%;
+        margin-top: 56px;
+        cursor: crosshair;
+      }
+
+      .color-palette {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+      }
+
+      .color-swatch {
+        width: 20px;
+        height: 20px;
+        margin-left: 5px;
+        border: 1px solid #ffffff;
+        cursor: pointer;
+      }
+
+      .color-swatch:hover {
+        border: 2px solid #ffffff;
+      }
+
+      .tool-btn {
+        margin-right: 5px;
+        position: relative;
+      }
+
+      .tool-btn.active {
+        background-color: #343a40;
+        color: #ffffff;
+      }
+
+      .tool-btn i {
+        color: #ffffff;
+      }
+
+      .tool-btn.active i {
+        color: #ffffff;
+      }
+
+      .navbar-dark .navbar-nav .btn {
+        color: #ffffff;
+      }
+
+      .navbar-dark .navbar-nav .btn:hover {
+        color: #ffd700;
+      }
+
+      .size-control {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+      }
+
+      .size-control label {
+        margin-right: 5px;
+        color: #ffffff;
+        font-size: 14px;
+      }
+
+      .size-control input[type="range"] {
+        width: 100px;
+      }
+
+      .action-btn {
+        margin-left: 10px;
+      }
+
+      /* Styles for the eraser size popup */
+      .eraser-popup {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #343a40;
+        padding: 10px;
+        border: 1px solid #ffffff;
+        border-radius: 5px;
+        display: none; /* Hidden by default */
+        z-index: 1000;
+        width: 200px;
+        margin-top: 5px;
+      }
+
+      .eraser-popup header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .eraser-popup header span {
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      .eraser-popup header button {
+        background: none;
+        border: none;
+        color: #ffffff;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .eraser-popup .size-display {
+        color: #ffffff;
+        margin-top: 5px;
+        text-align: right;
+        font-size: 14px;
+      }
+
+      /* Custom Cursor for Eraser */
+      #customCursor {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        display: none;
+        z-index: 1001;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .eraser-popup {
+          width: 180px;
+        }
+        .size-control input[type="range"] {
+          width: 80px;
+        }
+      }
+
+      /* Styles for the AI Response Modal */
+      .modal-backdrop.show {
+        opacity: 0.8; /* Adjust opacity for semi-transparency */
+      }
+
+      .modal-content {
+        background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent background */
+        border: none;
+        color: #ffffff;
+      }
+
+      .modal-header {
+        border-bottom: none;
+      }
+
+      .modal-title {
+        margin: 0 auto;
+        font-size: 1.5rem;
+      }
+
+      .close {
+        color: #ffffff;
+        opacity: 1;
+      }
+
+      .close:hover {
+        color: #ffd700;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .modal-body {
+        text-align: center;
+        font-size: 1.2rem;
+      }
+
+      .modal-footer {
+        border-top: none;
+        justify-content: center;
+      }
+
+      .btn-close {
+        padding: 0.5rem 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-nav">
+          <button
+            class="btn btn-dark tool-btn active"
+            data-tool="freehand"
+            title="Pencil"
+          >
+            <i class="bi bi-brush"></i>
+          </button>
+          <button class="btn btn-dark tool-btn" data-tool="line" title="Line">
+            <i class="bi bi-slash-lg"></i>
+          </button>
+          <button
+            class="btn btn-dark tool-btn"
+            data-tool="rectangle"
+            title="Rectangle"
+          >
+            <i class="bi bi-square"></i>
+          </button>
+          <button
+            class="btn btn-dark tool-btn"
+            data-tool="circle"
+            title="Circle"
+          >
+            <i class="bi bi-circle"></i>
+          </button>
+          <button
+            class="btn btn-dark tool-btn"
+            data-tool="triangle"
+            title="Triangle"
+          >
+            <i class="bi bi-triangle"></i>
+          </button>
+          <div class="btn-group position-relative">
+            <button
+              class="btn btn-dark tool-btn"
+              data-tool="eraser"
+              title="Eraser"
+            >
+              <i class="bi bi-eraser"></i>
+            </button>
+            <button
+              class="btn btn-dark action-btn"
+              id="toggleEraserSizeBtn"
+              title="Eraser Size"
+            >
+              <i class="bi bi-arrow-down"></i>
+            </button>
+            <!-- Eraser Size Popup -->
+            <div class="eraser-popup" id="eraserPopup">
+              <header>
+                <span>Eraser Size</span>
+                <button id="closeEraserPopup">&times;</button>
+              </header>
+              <input type="range" id="eraserSize" min="5" max="50" value="20" />
+              <div class="size-display" id="eraserSizeDisplay">20 px</div>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex ms-auto align-items-center position-relative">
+          <div class="color-palette">
+            <div
+              class="color-swatch"
+              data-color="#FF0000"
+              style="background-color: #ff0000"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#FFA500"
+              style="background-color: #ffa500"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#FFFF00"
+              style="background-color: #ffff00"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#008000"
+              style="background-color: #008000"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#0000FF"
+              style="background-color: #0000ff"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#800080"
+              style="background-color: #800080"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#FFC0CB"
+              style="background-color: #ffc0cb"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#A52A2A"
+              style="background-color: #a52a2a"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#808080"
+              style="background-color: #808080"
+            ></div>
+            <div
+              class="color-swatch"
+              data-color="#FFFFFF"
+              style="background-color: #ffffff"
+            ></div>
+          </div>
+          <!-- Pencil Size Control -->
+          <div class="size-control">
+            <label for="pencilSize">Size:</label>
+            <input type="range" id="pencilSize" min="1" max="50" value="2" />
+          </div>
+          <!-- Action Buttons -->
+          <button class="btn btn-dark action-btn" id="sendBtn" title="Send">
+            <i class="bi bi-download"></i> Send
+          </button>
+          <button class="btn btn-dark action-btn" id="undoBtn" title="Undo">
+            <i class="bi bi-arrow-counterclockwise"></i> Undo
+          </button>
+          <button class="btn btn-dark action-btn" id="resetBtn" title="Reset">
+            <i class="bi bi-arrow-clockwise"></i> Reset
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Custom Cursor for Eraser -->
+    <div id="customCursor"></div>
+
+    <canvas id="drawingCanvas"></canvas>
+
+    <!-- Modal for AI Response -->
+    <div
+      class="modal fade"
+      id="aiResponseModal"
+      tabindex="-1"
+      aria-labelledby="aiResponseModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="aiResponseModalLabel">AI Response</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <!-- AI Response will be inserted here -->
+            <div id="aiResponseContent">AI response here.</div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+      // Get DOM elements
+      const canvas = document.getElementById("drawingCanvas");
+      const ctx = canvas.getContext("2d");
+      const toolButtons = document.querySelectorAll(".tool-btn");
+      const colorSwatches = document.querySelectorAll(".color-swatch");
+      const sendBtn = document.getElementById("sendBtn");
+      const undoBtn = document.getElementById("undoBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const pencilSizeSlider = document.getElementById("pencilSize");
+      const toggleEraserSizeBtn = document.getElementById(
+        "toggleEraserSizeBtn"
+      );
+      const eraserPopup = document.getElementById("eraserPopup");
+      const closeEraserPopup = document.getElementById("closeEraserPopup");
+      const eraserSizeSlider = document.getElementById("eraserSize");
+      const eraserSizeDisplay = document.getElementById("eraserSizeDisplay");
+      const customCursor = document.getElementById("customCursor");
+
+      // Get modal elements
+      const aiResponseModal = new bootstrap.Modal(
+        document.getElementById("aiResponseModal"),
+        {
+          backdrop: "static",
+          keyboard: false
+        }
+      );
+      const aiResponseContent = document.getElementById("aiResponseContent");
+
+      // Initialize variables
+      let drawing = false;
+      let currentTool = "freehand";
+      let startX = 0;
+      let startY = 0;
+      let currentColor = "#FFFFFF";
+      let lineWidth = parseInt(pencilSizeSlider.value);
+      let eraserSize = parseInt(eraserSizeSlider.value);
+      let lastX, lastY;
+
+      // Initialize the undo stack
+      let undoStack = [];
+
+      // Variable to store the current drawing snapshot
+      let currentDrawingSnapshot = null;
+
+      // Set up canvas size
+      window.addEventListener("load", () => {
+        resizeCanvas();
+        saveSnapshot();
+      });
+
+      window.addEventListener("resize", resizeCanvas);
+
+      function resizeCanvas() {
+        // Preserve the current canvas content
+        const tempImage = new Image();
+        tempImage.src = canvas.toDataURL();
+        tempImage.onload = function () {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight - 56; // Adjust according to the navbar height
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(tempImage, 0, 0, canvas.width, canvas.height);
+        };
+      }
+
+      // Tool selection
+      toolButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (currentTool !== button.getAttribute("data-tool")) {
+            saveSnapshot(); // Save before changing the tool
+          }
+
+          document
+            .querySelector(".tool-btn.active")
+            ?.classList.remove("active");
+          button.classList.add("active");
+          currentTool = button.getAttribute("data-tool");
+
+          if (currentTool !== "eraser") {
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = "round";
+            hideCustomCursor();
+          } else {
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = eraserSize;
+            ctx.lineCap = "round";
+            showCustomCursor();
+          }
+        });
+      });
+
+      // Color selection
+      colorSwatches.forEach((swatch) => {
+        swatch.addEventListener("click", () => {
+          currentColor = swatch.getAttribute("data-color");
+          if (currentTool !== "eraser") {
+            ctx.strokeStyle = currentColor;
+          }
+        });
+      });
+
+      // Pencil size control
+      pencilSizeSlider.addEventListener("input", () => {
+        lineWidth = parseInt(pencilSizeSlider.value);
+        if (currentTool === "freehand") {
+          ctx.lineWidth = lineWidth;
+        }
+      });
+
+      // Eraser size control inside the popup
+      eraserSizeSlider.addEventListener("input", () => {
+        eraserSize = parseInt(eraserSizeSlider.value);
+        eraserSizeDisplay.textContent = eraserSize + " px";
+        if (currentTool === "eraser") {
+          ctx.lineWidth = eraserSize;
+          updateCustomCursorSize();
+        }
+      });
+
+      // Toggle the eraser size popup
+      toggleEraserSizeBtn.addEventListener("click", () => {
+        eraserPopup.style.display =
+          eraserPopup.style.display === "none" ||
+          eraserPopup.style.display === ""
+            ? "block"
+            : "none";
+      });
+
+      // Close the eraser size popup
+      closeEraserPopup.addEventListener("click", () => {
+        eraserPopup.style.display = "none";
+      });
+
+      // Save the current state of the canvas to the undo stack
+      function saveSnapshot() {
+        // Limit the stack size to 50
+        if (undoStack.length >= 50) {
+          undoStack.shift();
+        }
+        // Save the current state
+        undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      }
+
+      // Restore the last state of the canvas from the undo stack
+      function restoreSnapshot() {
+        if (undoStack.length > 0) {
+          const previousSnapshot = undoStack.pop();
+          ctx.putImageData(previousSnapshot, 0, 0);
+        } else {
+          // Optionally clear the canvas if there are no snapshots
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      // Get the mouse position relative to the canvas
+      function getMousePos(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        };
+      }
+
+      // Mouse down event
+      canvas.addEventListener("mousedown", (e) => {
+        drawing = true;
+        const pos = getMousePos(e);
+        startX = pos.x;
+        startY = pos.y;
+        saveSnapshot(); // Save before starting to draw
+
+        if (currentTool === "freehand") {
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          lastX = startX;
+          lastY = startY;
+        }
+        if (currentTool === "eraser") {
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = eraserSize;
+          ctx.lineCap = "round";
+        } else {
+          ctx.strokeStyle = currentColor;
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = "round";
+        }
+
+        // If it's a geometric tool, save the current state for dynamic drawing
+        if (["line", "rectangle", "circle", "triangle"].includes(currentTool)) {
+          currentDrawingSnapshot = ctx.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+        }
+      });
+
+      // Mouse move event
+      canvas.addEventListener("mousemove", (e) => {
+        const pos = getMousePos(e);
+
+        // Update the custom cursor position if the eraser is active
+        if (currentTool === "eraser") {
+          updateCustomCursorPosition(e.clientX, e.clientY);
+        }
+
+        if (!drawing) return;
+
+        if (["line", "rectangle", "circle", "triangle"].includes(currentTool)) {
+          // Restore the snapshot before drawing the shape
+          if (currentDrawingSnapshot) {
+            ctx.putImageData(currentDrawingSnapshot, 0, 0);
+          }
+
+          ctx.strokeStyle = currentColor;
+          ctx.fillStyle = currentColor;
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = "round";
+
+          switch (currentTool) {
+            case "line":
+              drawLine(startX, startY, pos.x, pos.y);
+              break;
+            case "rectangle":
+              drawRectangle(startX, startY, pos.x - startX, pos.y - startY);
+              break;
+            case "circle":
+              drawEllipse(startX, startY, pos.x, pos.y);
+              break;
+            case "triangle":
+              drawTriangle(startX, startY, pos.x, pos.y);
+              break;
+          }
+        } else if (currentTool === "freehand") {
+          ctx.strokeStyle = currentColor;
+          ctx.lineWidth = lineWidth;
+          drawFreehand(pos.x, pos.y);
+        } else if (currentTool === "eraser") {
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = eraserSize;
+          drawFreehand(pos.x, pos.y);
+        }
+      });
+
+      // Mouse up event
+      canvas.addEventListener("mouseup", () => {
+        if (drawing) {
+          drawing = false;
+          lastX = null;
+          lastY = null;
+          currentDrawingSnapshot = null; // Clear the current snapshot
+        }
+      });
+
+      // Mouse leave event
+      canvas.addEventListener("mouseleave", () => {
+        if (drawing) {
+          drawing = false;
+          lastX = null;
+          lastY = null;
+          currentDrawingSnapshot = null; // Clear the current snapshot
+        }
+        hideCustomCursor();
+      });
+
+      // Drawing functions
+      function drawLine(x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      function drawRectangle(x, y, w, h) {
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.stroke();
+      }
+
+      function drawEllipse(x1, y1, x2, y2) {
+        ctx.beginPath();
+        const radiusX = Math.abs((x2 - x1) / 2);
+        const radiusY = Math.abs((y2 - y1) / 2);
+        const centerX = x1 + radiusX;
+        const centerY = y1 + radiusY;
+        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
+
+      function drawTriangle(x1, y1, x2, y2) {
+        ctx.beginPath();
+        ctx.moveTo((x1 + x2) / 2, y1);
+        ctx.lineTo(x1, y2);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      function drawFreehand(x, y) {
+        if (lastX === null || lastY === null) {
+          lastX = x;
+          lastY = y;
+          return;
+        }
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        lastX = x;
+        lastY = y;
+      }
+
+      // Send button functionality
+      sendBtn.addEventListener("click", () => {
+        canvas.toBlob(function (blob) {
+          const formData = new FormData();
+          formData.append("image", blob, "drawing.png");
+
+          // Show loading indicator (optional)
+          sendBtn.disabled = true;
+          sendBtn.innerHTML =
+            '<i class="bi bi-hourglass-split"></i> Sending...';
+
+          fetch("/analyze", {
+            method: "POST",
+            body: formData
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("AI Response:", data);
+              sendBtn.disabled = false;
+              sendBtn.innerHTML = '<i class="bi bi-download"></i> Send';
+
+              if (data.ai_response) {
+                // Use Marked.js to parse Markdown
+                const markdownContent = `**${data.ai_response}**`;
+                const htmlContent = marked.parse(markdownContent);
+                aiResponseContent.innerHTML = htmlContent;
+                aiResponseModal.show();
+              } else if (data.error) {
+                // Show error message in the modal
+                const markdownContent = `**Error:** ${data.error}`;
+                const htmlContent = marked.parse(markdownContent);
+                aiResponseContent.innerHTML = htmlContent;
+                aiResponseModal.show();
+              } else {
+                // If no 'ai_response', inform the user to check the server console
+                const markdownContent = `**Image sent for analysis. Check the server console for the response.**`;
+                const htmlContent = marked.parse(markdownContent);
+                aiResponseContent.innerHTML = htmlContent;
+                aiResponseModal.show();
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              sendBtn.disabled = false;
+              sendBtn.innerHTML = '<i class="bi bi-download"></i> Send';
+              // Show error message in the modal
+              const markdownContent = `**Error:** ${error}`;
+              const htmlContent = marked.parse(markdownContent);
+              aiResponseContent.innerHTML = htmlContent;
+              aiResponseModal.show();
+            });
+        }, "image/png");
+      });
+
+      // Undo button functionality
+      undoBtn.addEventListener("click", () => {
+        restoreSnapshot(); // Restore the last state from the stack
+      });
+
+      // Reset button functionality
+      resetBtn.addEventListener("click", () => {
+        saveSnapshot(); // Save the current state before resetting
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Clear the undo stack when resetting
+        undoStack = [];
+      });
+
+      // Custom cursor functions
+      function showCustomCursor() {
+        customCursor.style.display = "block";
+        canvas.style.cursor = "none";
+      }
+
+      function hideCustomCursor() {
+        customCursor.style.display = "none";
+        canvas.style.cursor = "crosshair";
+      }
+
+      function updateCustomCursorPosition(x, y) {
+        customCursor.style.left = x + "px";
+        customCursor.style.top = y + "px";
+      }
+
+      function updateCustomCursorSize() {
+        customCursor.style.width = eraserSize + "px";
+        customCursor.style.height = eraserSize + "px";
+      }
+
+      // Initialize the custom cursor size
+      updateCustomCursorSize();
+
+      // Update the custom cursor size when the eraser size changes
+      eraserSizeSlider.addEventListener("input", () => {
+        updateCustomCursorSize();
+      });
+
+      // Show the custom cursor when the eraser tool is active and the mouse is over the canvas
+      canvas.addEventListener("mouseenter", () => {
+        if (currentTool === "eraser") {
+          showCustomCursor();
+        }
+      });
+
+      // Hide the custom cursor when the mouse leaves the canvas
+      canvas.addEventListener("mouseleave", () => {
+        hideCustomCursor();
+      });
+    </script>
+  </body>
+</html>
