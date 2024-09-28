@@ -4,7 +4,7 @@ MathSketch AI is an image-based mathematical equation solver designed to analyze
 
 ## Demo Video
 
-Watch the demo of Scrape Master [here](https://res.cloudinary.com/dakw2jqjp/video/upload/v1725817990/video/Scrape-Master-AI-Powered-Web-Scraping-Tool/Screen_Recording_2024-09-08_112357_zmygqo.mp4).
+Watch the demo of Scrape Master [here](https://res.cloudinary.com/dakw2jqjp/video/upload/v1727485665/Coding%20Projects/MathSketch%20AI/video/mathsketch_ai_dduhnd.mp4).
 
 ## Features
 
@@ -22,7 +22,7 @@ Watch the demo of Scrape Master [here](https://res.cloudinary.com/dakw2jqjp/vide
 
 ## Installation
 
-To install and use Scrape Master, clone the repository and install the required dependencies:
+To install and use MathSketch AI, clone the repository and install the required dependencies:
 
 ```bash
 git clone [https://github.com/J12003LPZ/Scrape-Master-AI-Powered-Web-Scraping-Tool.git]
