@@ -4,7 +4,7 @@ MathSketch AI is an image-based mathematical equation solver designed to analyze
 
 ## Demo Video
 
-Watch the demo of Scrape Master [here](https://res.cloudinary.com/dakw2jqjp/video/upload/v1727485665/Coding%20Projects/MathSketch%20AI/video/mathsketch_ai_dduhnd.mp4).
+Watch the demo of MathSketch AI [here](https://res.cloudinary.com/dakw2jqjp/video/upload/v1727485665/Coding%20Projects/MathSketch%20AI/video/mathsketch_ai_dduhnd.mp4).
 
 ## Features
 
